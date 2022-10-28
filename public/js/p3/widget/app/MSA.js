@@ -88,7 +88,6 @@ define([
         this.genome_id.set('disabled', true);
         this.reference_string_table.style.display = 'none';
         this.reference_string.set('disabled', true);
-        // this.reference_none.set('checked', true);
       }
       this.validate();
     },
@@ -134,14 +133,23 @@ define([
     },
 
     onChangeType: function () {
+      // if ((this.feature_id.get('checked') && this.input_genomegroup.get('checked')) ||
+      //   (this.genome_id.get('checked') && this.input_group.get('checked'))) {
+      //   this.reference_none.set('checked', true);
+      // }
       this.inputInitialize();
       this.aligner.set('required', true);
       this.aligner.set('disabled', false);
       this.genomegroup_message.innerHTML = '';
+      // Reset the reference to none if the current reference selection makes no sense for the type.
       if (((this.feature_id.get('checked') || this.genome_id.get('checked')) &&
         (this.input_fasta.get('checked') || this.input_sequence.get('checked'))) ||
         (this.reference_first.get('checked') &&
           (this.input_group.get('checked') || this.input_genomegroup.get('checked')))) {
+        this.reference_none.set('checked', true);
+      }
+      if ((this.feature_id.get('checked') && this.input_genomegroup.get('checked')) ||
+        (this.genome_id.get('checked') && this.input_group.get('checked'))) {
         this.reference_none.set('checked', true);
       }
       if (this.input_group.checked == true) {
@@ -292,7 +300,7 @@ define([
         .then((result) => {
           const feature_list = [];
           result.items.forEach(function (sel) {
-            feature_list.push({ label: sel.patric_id + ' -- ' + sel.product.substring(0, 60), id: sel.patric_id });
+            feature_list.push({ id: sel.patric_id, label: sel.patric_id + ' -- ' + sel.product.substring(0, 60) });
           });
           // console.log(feature_list);
           this.select_feature_id.set('store', new Memory({ data: feature_list }));
@@ -444,6 +452,9 @@ define([
       } else if (values.user_genomes_fasta) {
         my_input_type = 'user_genomes_fasta';
       }
+      if (!values.user_genomes_alignment) {
+        delete values.user_genomes_alignment;
+      }
       // Set the alphabet
       if (!values.alphabet) {
         values.alphabet = 'dna';
@@ -457,14 +468,12 @@ define([
       if (values.ref_type == 'string') {
         values.ref_string = values.fasta_keyboard_reference;
         delete values.fasta_keyboard_reference;
-      } else if (values.ref_type == 'id') {
+      } else if (values.ref_type == 'feature_id') {
         values.ref_string = values.select_feature_id;
         delete values.select_feature_id;
-        if (values.input_type == 'input_group') {
-          values.ref_type = 'feature_id';
-        } else {
-          values.ref_type = 'genome_id';
-        }
+      } else if (values.ref_type == 'genome_id') {
+        values.ref_string = values.select_genome_id;
+        delete values.select_genome_id;
       }
       // Create array of fasta files if needed.
       if (my_input_type) {
