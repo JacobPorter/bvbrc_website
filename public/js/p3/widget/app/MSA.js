@@ -2,14 +2,14 @@ define([
   'dojo/_base/declare', 'dijit/_WidgetBase', 'dojo/topic', 'dojo/on',
   'dojo/dom-class',
   'dojo/text!./templates/MSA.html', './AppBase', 'dojo/dom-construct', 'dijit/registry',
-  'dojo/_base/Deferred', 'dojo/aspect', 'dojo/_base/lang', 'dojo/domReady!', 'dijit/form/NumberTextBox', 'dijit/form/Textarea', 'dijit/form/Select',
+  'dojo/_base/Deferred', 'dojo/aspect', 'dojo/_base/lang', 'dojo/domReady!', 'dijit/form/NumberTextBox', 'dijit/form/Textarea', 'dijit/form/Select', 'dijit/form/FilteringSelect',
   'dojo/query', 'dojo/dom', 'dijit/popup', 'dijit/Tooltip', 'dijit/Dialog', 'dijit/TooltipDialog', '../../DataAPI',
   'dojo/NodeList-traverse', '../../WorkspaceManager', 'dojo/store/Memory', 'dojox/widget/Standby', 'dojo/when'
 ], function (
   declare, WidgetBase, Topic, on,
   domClass,
   Template, AppBase, domConstruct, registry,
-  Deferred, aspect, lang, domReady, NumberTextBox, Textarea, Select,
+  Deferred, aspect, lang, domReady, NumberTextBox, Textarea, Select, FilteringSelect,
   query, dom, popup, Tooltip, Dialog, TooltipDialog, DataAPI,
   children, WorkspaceManager, Memory, Standby, when
 ) {
@@ -71,6 +71,9 @@ define([
         this.aligner_table.style.display = 'table';
         this.onChangeType();
       } else if (this.aligned.checked == true) {
+        if (this.feature_id.get('checked') || this.genome_id.get('checked') || this.reference_string.get('checked')) {
+          this.reference_none.set('checked', true);
+        }
         this.aligner_table.style.display = 'none';
         this.unaligned_box.style.display = 'none';
         this.aligned_box.style.display = 'inline-block';
@@ -79,8 +82,10 @@ define([
         this.reference_none.set('disabled', false);
         this.reference_first_table.style.display = 'table';
         this.reference_first.set('disabled', false);
-        this.reference_id_table.style.display = 'none';
-        this.reference_id.set('disabled', true);
+        this.feature_id_table.style.display = 'none';
+        this.feature_id.set('disabled', true);
+        this.genome_id_table.style.display = 'none';
+        this.genome_id.set('disabled', true);
         this.reference_string_table.style.display = 'none';
         this.reference_string.set('disabled', true);
         // this.reference_none.set('checked', true);
@@ -116,12 +121,16 @@ define([
       this.reference_none.set('disabled', false);
       this.reference_first_table.style.display = 'table';
       this.reference_first.set('disabled', false);
-      this.reference_id_table.style.display = 'table';
-      this.reference_id.set('disabled', false);
+      this.feature_id_table.style.display = 'table';
+      this.feature_id.set('disabled', false);
+      this.genome_id_table.style.display = 'table';
+      this.genome_id.set('disabled', false);
       this.reference_string_table.style.display = 'table';
       this.reference_string.set('disabled', false);
-      this.select_reference_id.set('options', '');
-      this.select_reference_id.set('value', '');
+      this.select_feature_id.set('options', '');
+      this.select_feature_id.set('value', '');
+      this.select_genome_id.set('options', '');
+      this.select_genome_id.set('value', '');
     },
 
     onChangeType: function () {
@@ -129,7 +138,7 @@ define([
       this.aligner.set('required', true);
       this.aligner.set('disabled', false);
       this.genomegroup_message.innerHTML = '';
-      if ((this.reference_id.get('checked') &&
+      if (((this.feature_id.get('checked') || this.genome_id.get('checked')) &&
         (this.input_fasta.get('checked') || this.input_sequence.get('checked'))) ||
         (this.reference_first.get('checked') &&
           (this.input_group.get('checked') || this.input_genomegroup.get('checked')))) {
@@ -143,7 +152,8 @@ define([
         this.featuregroup_table.style.display = 'table';
         this.reference_first_table.style.display = 'none';
         this.reference_first.set('disabled', true);
-        document.getElementById('reference_id_label').innerHTML = 'Feature ID';
+        this.genome_id_table.style.display = 'none';
+        this.genome_id.set('disabled', true);
         this.handleFeatureGroup();
       } else if (this.input_genomegroup.checked == true) {
         this.select_genomegroup.set('required', true);
@@ -151,42 +161,54 @@ define([
         this.genomegroup_table.style.display = 'table';
         this.reference_first_table.style.display = 'none';
         this.reference_first.set('disabled', true);
-        document.getElementById('reference_id_label').innerHTML = 'Genome ID';
-        this.handleGenomeGroup();
+        this.feature_id_table.style.display = 'none';
+        this.feature_id.set('disabled', true);
+        // this.handleGenomeGroup();
       } else if (this.input_fasta.checked == true) {
         this.user_genomes_fasta.set('required', true);
         this.user_genomes_fasta.set('disabled', false);
         this.fastafile_table.style.display = 'table';
-        this.reference_id_table.style.display = 'none';
-        this.reference_id.set('disabled', true);
+        this.feature_id_table.style.display = 'none';
+        this.feature_id.set('disabled', true);
+        this.genome_id_table.style.display = 'none';
+        this.genome_id.set('disabled', true);
       } else if (this.input_sequence.checked == true) {
         this.fasta_keyboard_input.set('required', true);
         this.fasta_keyboard_input.set('disabled', false);
         this.fasta_keyboard_input.set('rows', this.input_seq_rows);
         this.fastainput_table.style.display = 'table';
-        this.reference_id_table.style.display = 'none';
-        this.reference_id.set('disabled', true);
+        this.feature_id_table.style.display = 'none';
+        this.feature_id.set('disabled', true);
+        this.genome_id_table.style.display = 'none';
+        this.genome_id.set('disabled', true);
         this.checkFasta();
       }
       this.validate();
     },
 
     referenceInitialize: function () {
-      this.select_reference_id.set('disabled', true);
+      this.select_feature_id.set('disabled', true);
+      this.select_genome_id.set('disabled', true);
       this.fasta_keyboard_reference.set('disabled', true);
-      this.select_reference_id.set('required', false);
+      this.select_feature_id.set('required', false);
+      this.select_genome_id.set('required', false);
       this.fasta_keyboard_reference.set('required', false);
       this.fasta_reference_message.innerHTML = '';
-      this.ref_id_table.style.display = 'none';
+      this.ref_feature_id_table.style.display = 'none';
+      this.ref_genome_id_table.style.display = 'none';
       this.ref_seq_table.style.display = 'none';
     },
 
     onChangeReference: function () {
       this.referenceInitialize();
-      if (this.reference_id.checked == true) {
-        this.select_reference_id.set('disabled', false);
-        this.select_reference_id.set('required', true);
-        this.ref_id_table.style.display = 'table';
+      if (this.feature_id.checked == true) {
+        this.select_feature_id.set('disabled', false);
+        this.select_feature_id.set('required', true);
+        this.ref_feature_id_table.style.display = 'table';
+      } else if (this.genome_id.checked == true) {
+        this.select_genome_id.set('disabled', false);
+        this.select_genome_id.set('required', true);
+        this.ref_genome_id_table.style.display = 'table';
       } else if (this.reference_string.checked == true) {
         this.fasta_keyboard_reference.set('disabled', false);
         this.fasta_keyboard_reference.set('required', true);
@@ -257,9 +279,11 @@ define([
     },
 
     initializeRefId: function () {
-      this.select_reference_id.reset();
-      this.select_reference_id.set('options', [{ label: '', value: '', selected: true }]);
-      this.select_reference_id.set('value', '');
+      this.select_feature_id.reset();
+      this.select_feature_id.set('store', new Memory({
+        data: [{ label: '', id: '', selected: true }]
+      }));
+      this.select_feature_id.set('id', '');
     },
 
     handleFeatureGroup: function (value = '') {
@@ -268,31 +292,32 @@ define([
         .then((result) => {
           const feature_list = [];
           result.items.forEach(function (sel) {
-            feature_list.push({ label: sel.patric_id + ' -- ' + sel.product.substring(0, 60), value: sel.patric_id });
+            feature_list.push({ label: sel.patric_id + ' -- ' + sel.product.substring(0, 60), id: sel.patric_id });
           });
-          this.select_reference_id.set('options', feature_list);
+          // console.log(feature_list);
+          this.select_feature_id.set('store', new Memory({ data: feature_list }));
           if (value) {
-            this.select_reference_id.set('value', value)
+            this.select_feature_id.set('id', value)
           }
         });
       this.validate();
     },
 
-    handleGenomeGroup: function (value = '') {
-      this.initializeRefId();
-      DataAPI.queryGenomes('in(genome_id,GenomeGroup(' + encodeURIComponent(this.select_genomegroup.get('value')) + '))', { 'limit': 1000 })
-        .then((result) => {
-          const id_list = [];
-          result.items.forEach(function (sel) {
-            id_list.push({ label: sel.genome_id + ' -- ' + sel.genome_name.substring(0, 60), value: sel.genome_id });
-          });
-          this.select_reference_id.set('options', id_list);
-          if (value) {
-            this.select_reference_id.set('value', value)
-          }
-        });
-      this.validate();
-    },
+    // handleGenomeGroup: function (value = '') {
+    //   this.initializeRefId();
+    //   DataAPI.queryGenomes('in(genome_id,GenomeGroup(' + encodeURIComponent(this.select_genomegroup.get('value')) + '))', { 'limit': 1000 })
+    //     .then((result) => {
+    //       const id_list = [];
+    //       result.items.forEach(function (sel) {
+    //         id_list.push({ label: sel.genome_id + ' -- ' + sel.genome_name.substring(0, 60), value: sel.genome_id });
+    //       });
+    //       this.select_feature_id.set('options', id_list);
+    //       if (value) {
+    //         this.select_feature_id.set('value', value)
+    //       }
+    //     });
+    //   this.validate();
+    // },
 
     setTooltips: function () {
       new Tooltip({
@@ -304,7 +329,7 @@ define([
         label: 'This option applies to a selected fasta file or a fasta file entered in the text box.'
       });
       new Tooltip({
-        connectId: ['reference_id_tooltip'],
+        connectId: ['feature_id_tooltip'],
         label: 'This option applies to a selected feature group or a selected genome group.'
       });
     },
@@ -433,8 +458,8 @@ define([
         values.ref_string = values.fasta_keyboard_reference;
         delete values.fasta_keyboard_reference;
       } else if (values.ref_type == 'id') {
-        values.ref_string = values.select_reference_id;
-        delete values.select_reference_id;
+        values.ref_string = values.select_feature_id;
+        delete values.select_feature_id;
         if (values.input_type == 'input_group') {
           values.ref_type = 'feature_id';
         } else {
@@ -517,11 +542,11 @@ define([
       if (job_data['ref_type'] == 'first') {
         this.reference_first.set('checked', true);
       } else if (job_data['ref_type'] == 'genome_id') {
-        this.reference_id.set('checked', true);
-        this.handleGenomeGroup(job_data['ref_string']);
-        // this.select_reference_id.set('value', job_data['ref_string']);
+        this.genome_id.set('checked', true);
+        // this.handleGenomeGroup(job_data['ref_string']);
+        // this.select_feature_id.set('value', job_data['ref_string']);
       } else if (job_data['ref_type'] == 'feature_id') {
-        this.reference_id.set('checked', true);
+        this.feature_id.set('checked', true);
         this.handleFeatureGroup(job_data['ref_string']);
       } else if (job_data['ref_type'] == 'string') {
         this.reference_string.set('checked', true);
