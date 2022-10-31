@@ -307,6 +307,8 @@ define([
           if (value) {
             this.select_feature_id.set('id', value)
           }
+        }).catch((error) => {
+          console.log('Getting the features from the feature group could not be done.');
         });
       this.validate();
     },
@@ -355,11 +357,14 @@ define([
           if (typeof res.data == 'string') {
             res.data = JSON.parse(res.data);
           }
-          if (res && res.data && res.data.id_list) {
-            if (res.data.id_list.genome_id) {
-              // viral genome checks
-              all_valid = this.checkViralGenomes(res.data.id_list.genome_id, def);
+          if (res && res.data && res.data.id_list && res.data.id_list.genome_id) {
+            // viral genome checks
+            var ref_id = this.select_genome_id.get('value');
+            console.log('ref_id: ' + ref_id);
+            if (ref_id) {
+              def = def && this.checkReference(ref_id, def);
             }
+            all_valid = this.checkViralGenomes(res.data.id_list.genome_id, def);
           }
         }));
         return all_valid;
@@ -377,11 +382,43 @@ define([
       }
     },
 
+    checkReference: function (ref_id, def) {
+      var all_valid = true;
+      var query = `in(genome_id,(${ref_id}))&select(genome_id,superkingdom,genome_length)&limit(1)`
+      console.log('ref query = ', query);
+      DataAPI.queryGenomes(query).then(lang.hitch(this, function (res) {
+        var errors = {};
+        res.items.forEach(lang.hitch(this, function (obj) {
+          if (obj.superkingdom && obj.superkingdom != 'Viruses') {
+            all_valid = false;
+            errors['kingdom_error'] = 'Error: The genome selected needs to be a viral genome.';
+          }
+          if (obj.genome_length > this.maxGenomeLength) {
+            all_valid = false;
+            errors['genomelength_error'] = 'Error: The genome exceeds the maximum length of ' + this.maxGenomeLength.toString();
+          }
+        }));
+        if (all_valid && def) {
+          this.submitButton.set('disabled', false);
+          this.genome_id_message.innerHTML = '';
+        }
+        if (!all_valid) {
+          this.submitButton.set('disabled', true);
+          var error_msg = 'This is an invalid genome.';
+          Object.values(errors).forEach(lang.hitch(this, function (err) {
+            error_msg = error_msg + '<br>- ' + err;
+          }));
+          this.genome_id_message.innerHTML = error_msg;
+        }
+      }));
+      return all_valid;
+    },
+
     // TODO: there may be a limit to the number of genome_ids that can be passed into the query, check that
     checkViralGenomes: function (genome_id_list, def) {
       // As far as I have seen Bacteria do not have a superkingdom field, only viruses
       var query = `in(genome_id,(${genome_id_list.toString()}))&select(genome_id,superkingdom,genome_length,contigs)&limit(${genome_id_list.length})`;
-      // console.log('query = ', query);
+      console.log('query = ', query);
       var all_valid = true;
       DataAPI.queryGenomes(query).then(lang.hitch(this, function (res) {
         // console.log('result = ', res);
