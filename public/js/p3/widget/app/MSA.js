@@ -346,51 +346,48 @@ define([
       this.genomegroup_message.innerHTML = '';
       this.genome_id_message.innerHTML = '';
       this.submitButton.set('disabled', true);
-      console.log('def: ' + def);
-      var val = this.validateGenomeGroup(def);
-      // if (val && def) {
-      //   this.submitButton.set('disabled', false);
-      // }
-      // else {
-      //   this.submitButton.set('disabled', true);
-      // }
-      // console.log('val: ' + val);
-      return val;
-    },
-
-    validateGenomeGroup: function (def) {
+      // console.log('def: ' + def);
       if (this.select_genomegroup.get('required') && this.select_genomegroup.searchBox.item && (this.input_genomegroup.checked == true) && (this.unaligned.checked == true)) {
-        // this.submitButton.set('disabled', true);
-        var path = this.select_genomegroup.searchBox.item.path;
-        var genomes_valid = true;
+        var ref_id = this.select_genome_id.get('value');
         var id_valid = true;
-        when(WorkspaceManager.getObject(path), lang.hitch(this, function (res) {
-          if (typeof res.data == 'string') {
-            res.data = JSON.parse(res.data);
-          }
-          if (res && res.data && res.data.id_list && res.data.id_list.genome_id) {
-            // viral genome checks
-            var ref_id = this.select_genome_id.get('value');
-            // console.log('ref_id: ' + ref_id);
-            // if (this.genome_id.get('checked')) {
-            id_valid = this.checkReferenceID(ref_id);
-            // }
-            genomes_valid = this.checkViralGenomes(res.data.id_list.genome_id);
-            console.log('genomes_valid: ' + genomes_valid + ', id_valid: ' + id_valid);
-          }
-        }));
-        return genomes_valid && id_valid;
+        if (this.genome_id.get('checked')) {
+          id_valid = this.validateReferenceID(ref_id);
+        }
+        var genomes_valid = this.validateGenomeGroup();
+        if (id_valid && genomes_valid && def) {
+          this.submitButton.set('disabled', false);
+        }
+        return id_valid && genomes_valid && def
       }
       if (this.input_sequence.get('checked') && (!this.fasta_keyboard_input.get('value') || !this.validFasta)) {
         // this.submitButton.set('disabled', true);
         return false;
       }
-      return true;
+      if (def) {
+        this.submitButton.set('disabled', false);
+      }
+      return def;
     },
 
-    checkReferenceID: function (ref_id) {
+    validateGenomeGroup: function () {
+      // this.submitButton.set('disabled', true);
+      var path = this.select_genomegroup.searchBox.item.path;
+      var genomes_valid = true;
+      when(WorkspaceManager.getObject(path), lang.hitch(this, function (res) {
+        if (typeof res.data == 'string') {
+          res.data = JSON.parse(res.data);
+        }
+        if (res && res.data && res.data.id_list && res.data.id_list.genome_id) {
+          // viral genome checks
+          genomes_valid = this.checkViralGenomes(res.data.id_list.genome_id);
+        }
+      }));
+      return genomes_valid;
+    },
+
+    validateReferenceID: function (ref_id) {
       var valid = true;
-      console.log('ref_id: ' + ref_id);
+      // console.log('ref_id: ' + ref_id);
       if (!ref_id) {
         // this.submitButton.set('disabled', true);
         return false;
@@ -409,12 +406,8 @@ define([
             errors['genomelength_error'] = 'Error: The genome exceeds the maximum length of ' + this.maxGenomeLength.toString();
           }
         }));
-        // if (valid && def) {
-        //   this.submitButton.set('disabled', false);
-        //   this.genome_id_message.innerHTML = '';
-        // }
         if (!valid) {
-          // this.submitButton.set('disabled', true);
+          this.submitButton.set('disabled', true);
           var error_msg = 'This is an invalid genome.';
           Object.values(errors).forEach(lang.hitch(this, function (err) {
             error_msg = error_msg + '<br>- ' + err;
@@ -462,7 +455,7 @@ define([
         // } else
 
         if (!all_valid) {
-          // this.submitButton.set('disabled', true);
+          this.submitButton.set('disabled', true);
           var error_msg = 'This is an invalid genome group. The following errors were found:';
           Object.values(errors).forEach(lang.hitch(this, function (err) {
             error_msg = error_msg + '<br>- ' + err;
