@@ -33,6 +33,7 @@ define([
     input_seq_min_seqs: 2,
     maxGenomes: 500,
     maxGenomeLength: 250000,
+    fid_value: '',
     validFasta: false,
     textInput: false,
 
@@ -126,10 +127,10 @@ define([
       this.genome_id.set('disabled', false);
       this.reference_string_table.style.display = 'table';
       this.reference_string.set('disabled', false);
-      this.select_feature_id.set('options', '');
-      this.select_feature_id.set('value', '');
-      this.select_genome_id.set('options', '');
-      this.select_genome_id.set('value', '');
+      // this.select_feature_id.set('options', '');
+      // this.select_feature_id.set('value', '');
+      // this.select_genome_id.set('options', '');
+      // this.select_genome_id.set('value', '');
     },
 
     onChangeType: function () {
@@ -162,7 +163,7 @@ define([
         this.reference_first.set('disabled', true);
         this.genome_id_table.style.display = 'none';
         this.genome_id.set('disabled', true);
-        this.handleFeatureGroup();
+        // this.handleFeatureGroup();
       } else if (this.input_genomegroup.checked == true) {
         this.select_genomegroup.set('required', true);
         this.select_genomegroup.set('disabled', false);
@@ -287,30 +288,34 @@ define([
     },
 
     initializeRefId: function () {
-      this.select_feature_id.reset();
-      this.select_feature_id.set('store', new Memory({
-        data: [{ label: '', id: '', selected: true }]
-      }));
-      this.select_feature_id.set('id', '');
+      // this.select_feature_id.reset();
+      // this.select_feature_id.set('store', new Memory({
+      //   data: [{ label: '', id: '', selected: true }]
+      // }));
+      this.select_feature_id.set('value', '');
     },
 
-    handleFeatureGroup: function (value = '') {
-      this.initializeRefId();
-      DataAPI.queryGenomeFeatures('in(feature_id,FeatureGroup(' + encodeURIComponent(this.user_genomes_featuregroup.get('value')) + '))', { 'limit': 1000 })
+    handleFeatureGroup: function (feature_group) {
+      var self = this;
+      self.initializeRefId();
+      DataAPI.queryGenomeFeatures('in(feature_id,FeatureGroup(' + encodeURIComponent(self.user_genomes_featuregroup.get('value')) + '))', { 'limit': 1000 })
         .then((result) => {
           const feature_list = [];
           result.items.forEach(function (sel) {
             feature_list.push({ id: sel.patric_id, label: sel.patric_id + ' -- ' + sel.product.substring(0, 60) });
           });
           // console.log(feature_list);
-          this.select_feature_id.set('store', new Memory({ data: feature_list }));
-          if (value) {
-            this.select_feature_id.set('id', value)
+          self.select_feature_id.set('store', new Memory({ data: feature_list }));
+          // console.log('Feature value: ' + self.fid_value);
+          if (self.fid_value) {
+            self.select_feature_id.set('value', self.fid_value);
+            self.fid_value = '';
           }
         }).catch((error) => {
           console.log('Getting the features from the feature group could not be done.');
+          console.log(error);
         });
-      this.validate();
+      self.validate();
     },
 
     // handleGenomeGroup: function (value = '') {
@@ -360,7 +365,7 @@ define([
           if (res && res.data && res.data.id_list && res.data.id_list.genome_id) {
             // viral genome checks
             var ref_id = this.select_genome_id.get('value');
-            console.log('ref_id: ' + ref_id);
+            // console.log('ref_id: ' + ref_id);
             if (ref_id) {
               def = def && this.checkReference(ref_id, def);
             }
@@ -385,7 +390,7 @@ define([
     checkReference: function (ref_id, def) {
       var all_valid = true;
       var query = `in(genome_id,(${ref_id}))&select(genome_id,superkingdom,genome_length)&limit(1)`
-      console.log('ref query = ', query);
+      // console.log('ref query = ', query);
       DataAPI.queryGenomes(query).then(lang.hitch(this, function (res) {
         var errors = {};
         res.items.forEach(lang.hitch(this, function (obj) {
@@ -418,7 +423,7 @@ define([
     checkViralGenomes: function (genome_id_list, def) {
       // As far as I have seen Bacteria do not have a superkingdom field, only viruses
       var query = `in(genome_id,(${genome_id_list.toString()}))&select(genome_id,superkingdom,genome_length,contigs)&limit(${genome_id_list.length})`;
-      console.log('query = ', query);
+      // console.log('query = ', query);
       var all_valid = true;
       DataAPI.queryGenomes(query).then(lang.hitch(this, function (res) {
         // console.log('result = ', res);
@@ -589,15 +594,11 @@ define([
         this.reference_first.set('checked', true);
       } else if (job_data['ref_type'] == 'genome_id') {
         this.genome_id.set('checked', true);
-        // this.handleGenomeGroup(job_data['ref_string']);
-        // this.select_feature_id.set('value', job_data['ref_string']);
-      } else if (job_data['ref_type'] == 'feature_id') {
-        this.feature_id.set('checked', true);
-        this.handleFeatureGroup(job_data['ref_string']);
+        this.select_genome_id.set('value', job_data['ref_string']);
       } else if (job_data['ref_type'] == 'string') {
         this.reference_string.set('checked', true);
         this.fasta_keyboard_reference.set('value', job_data['ref_string']);
-      } else {
+      } else if (job_data['ref_type'] == 'none') {
         this.reference_none.set('checked', true);
       }
     },
@@ -612,6 +613,10 @@ define([
       this.input_sequence.set('checked', false);
       if (job_data['input_type'] === 'input_group') {
         this.input_group.set('checked', true);
+        if (job_data['ref_type'] == 'feature_id') {
+          this.feature_id.set('checked', true);
+          this.fid_value = job_data['ref_string'];
+        }
         this.user_genomes_featuregroup.set('value', job_data['feature_groups'][0]);
       }
       else if (job_data['input_type'] === 'input_fasta') {
