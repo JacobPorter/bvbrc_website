@@ -83,7 +83,7 @@
               <td>
                 <div style="width:85%;display:inline-block;" data-dojo-type="p3/widget/WorkspaceObjectSelector"
                   name="select_genomegroup" required="false" data-dojo-attach-point="select_genomegroup"
-                  data-dojo-attach-event=""
+                  data-dojo-attach-event="onChange:validate"
                   data-dojo-props="type:['genome_group'], disabled:true,allowUpload:false,multi:false,promptMessage:'Select a viral genome group from your workspace for alignment.',missingMessage:'Genome group is required.', placeHolder:'Viral genome group'">
                 </div>
                 <div class="warning" data-dojo-attach-point="genomegroup_message"></div>
@@ -150,8 +150,6 @@
                   </tr>
                 </table>
               </td>
-
-
               <td>
                 <table data-dojo-attach-point="feature_id_table" style="width:100%; display:table">
                   <tr>
@@ -164,7 +162,6 @@
                   </tr>
                 </table>
               </td>
-
               <td>
                 <table data-dojo-attach-point="genome_id_table" style="width:100%; display:none">
                   <tr>
@@ -177,7 +174,6 @@
                   </tr>
                 </table>
               </td>
-
               <td>
                 <table data-dojo-attach-point="reference_string_table" style="width:100%; display:table">
                   <tr>
@@ -193,7 +189,6 @@
             </tr>
           </table>
         </div>
-
         <table data-dojo-attach-point="ref_feature_id_table" style="width:100%; display:none">
           <tr>
             <td>
@@ -206,7 +201,6 @@
             </td>
           </tr>
         </table>
-
         <table data-dojo-attach-point="ref_genome_id_table" style="width:100%; display:none">
           <tr>
             <td>
@@ -219,7 +213,6 @@
             </td>
           </tr>
         </table>
-
         <table data-dojo-attach-point="ref_seq_table" style="width:100%; display:none">
           <tr>
             <td>
