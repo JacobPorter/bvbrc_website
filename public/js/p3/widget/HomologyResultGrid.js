@@ -18,7 +18,8 @@ define([
     state: null,
     storeType: '',
     columns: {},
-    loadingMessage: 'Loading homology results...',
+    noDataMessage: 'Loading homology results...',
+    // loadingMessage: 'No results found.',
 
     result_types: {
       'genome_feature': {
@@ -110,8 +111,35 @@ define([
           evalue: { label: 'E value', field: 'evalue' }
         }
       },
-
+      'no_ids': {
+        container_type: 'fasta_data',
+        columns: {
+          'Selection Checkboxes': selector({ label: '', sortable: false, unhidable: true }),
+          expand: {
+            label: '',
+            field: '',
+            sortable: false,
+            unhidable: true,
+            renderCell: function (obj, val, node) {
+              node.innerHTML = '<div class="dgrid-expando-icon ui-icon ui-icon-triangle-1-e"></div>';
+            }
+          },
+          query: { label: 'Query ID', field: 'qseqid' },
+          patric_id: { label: 'Subject ID', field: 'sseqid' },
+          na_length: { label: 'Length (NT)', field: 'na_length' },
+          aa_length: { label: 'Length (AA)', field: 'aa_length' },
+          length: { label: 'ALN Length', field: 'length' },
+          identity: { label: 'Identity (%)', field: 'pident' },
+          q_coverage: { label: 'Query cover (%)', field: 'query_coverage' },
+          s_coverage: { label: 'Subject cover (%)', field: 'subject_coverage' },
+          hit_from: { label: 'Hit from', field: 'hit_from', hidden: true },
+          hit_to: { label: 'Hit to', field: 'hit_to', hidden: true },
+          score: { label: 'Score', field: 'bitscore' },
+          evalue: { label: 'E value', field: 'evalue' }
+        }
+      },
     },
+
     constructor: function (options, parent) {
       this.container = parent;
     },
@@ -131,7 +159,6 @@ define([
       } else {
         this.store.set('dataPath', dataPath)
       }
-
       this.refresh();
     },
 
