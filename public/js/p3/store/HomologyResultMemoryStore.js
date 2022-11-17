@@ -97,6 +97,15 @@ define([
       return result;
     },
 
+    defaultLoadData: function (res) {
+      var data = this.formatJSONResult(res);
+      data = data.map(function (d, idx) {
+        d._id = idx;
+        return d;
+      })
+      this.setData(data);
+    },
+
     loadWorkspaceData: function () {
 
       if (this._loadingDeferred) {
@@ -113,8 +122,11 @@ define([
       WorkspaceManager.getObject(this.dataPath, true).then(lang.hitch(this, function (job_obj) {
 
         /* extract the database type */
+        // console.log(job_obj);
         var db_type = job_obj.autoMeta.parameters.db_type;
-        if (db_type == 'ffn'  || db_type == 'faa') {
+        // var db_source = job_obj.autoMeta.parameters.db_source;
+        // console.log(db_source);
+        if (db_type == 'ffn' || db_type == 'faa') {
           this.type = 'genome_feature'
         } else if (db_type == 'fna') {
           this.type = 'genome_sequence'
@@ -163,43 +175,36 @@ define([
               }).filter(function (d) {
                 return d !== '';
               });
-              query.q = 'sequence_id:(' + resultIds.join(' OR ') + ')';
-              query.fl = 'genome_id,genome_name,taxon_id,sequence_id,accession,sequence_type';
+              if (resultIds.length <= 0) {
+                this.defaultLoadData(res);
+              } else {
+                query.q = (resultIds.length > 0) ? 'sequence_id:(' + resultIds.join(' OR ') + ')' : {};
+                query.fl = 'genome_id,genome_name,taxon_id,sequence_id,accession,sequence_type';
+              }
             } else if (this.type == 'genome_feature') {
               // doQuery = true;
-
               var patric_ids = [];
               var refseq_locus_tags = [];
               resultIds.forEach(function (id) {
                 if (id.indexOf('gi|') > -1) {
                   refseq_locus_tags.push(id.split('|')[2]);
-                } else {
+                } else if (id.indexOf('fig|') > -1) {
                   patric_ids.push(id);
                 }
               });
-
-              query.q = (patric_ids.length > 0) ? 'patric_id:(' + patric_ids.join(' OR ') + ')' : {};
-              (refseq_locus_tags.length > 0 && patric_ids.length > 0) ? query.q += ' OR ' : {};
-              (refseq_locus_tags.length > 0) ? query.q += '(refseq_locus_tag:(' + refseq_locus_tags.join(' OR ') + ') AND annotation:RefSeq)' : {};
-              query.fl = 'feature_id,patric_id,genome_id,genome_name,refseq_locus_tag,pgfam_id,plfam_id,figfam_id,gene,product,annotation,feature_type,gene_id,taxon_id,accession,start,end,strand,location,na_length,na_sequence_md5,aa_length,aa_sequence_md5';
+              if (patric_ids.length <= 0) {
+                this.defaultLoadData(res);
+              } else {
+                query.q = (patric_ids.length > 0) ? 'patric_id:(' + patric_ids.join(' OR ') + ')' : {};
+                (refseq_locus_tags.length > 0 && patric_ids.length > 0) ? query.q += ' OR ' : {};
+                (refseq_locus_tags.length > 0) ? query.q += '(refseq_locus_tag:(' + refseq_locus_tags.join(' OR ') + ') AND annotation:RefSeq)' : {};
+                query.fl = 'feature_id,patric_id,genome_id,genome_name,refseq_locus_tag,pgfam_id,plfam_id,figfam_id,gene,product,annotation,feature_type,gene_id,taxon_id,accession,start,end,strand,location,na_length,na_sequence_md5,aa_length,aa_sequence_md5';
+              }
             } else if (this.type == 'specialty_genes') {
-              // doQuery = true;
-              var data = this.formatJSONResult(res);
-              data = data.map(function (d, idx) {
-                d._id = idx;
-                return d;
-              })
-              this.setData(data);
+              this.defaultLoadData(res);
             } else {
-
-              var data = this.formatJSONResult(res);
-              data = data.map(function (d, idx) {
-                d._id = idx;
-                return d;
-              })
-              this.setData(data);
+              this.defaultLoadData(res);
             }
-
             return request.post(window.App.dataAPI + this.type + '/', {
               handleAs: 'json',
               headers: {
