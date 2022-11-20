@@ -18,8 +18,6 @@ define([
     state: null,
     storeType: '',
     columns: {},
-    noDataMessage: 'Loading homology results...',
-    // loadingMessage: 'No results found.',
 
     result_types: {
       'genome_feature': {
@@ -126,8 +124,8 @@ define([
           },
           query: { label: 'Query ID', field: 'qseqid' },
           patric_id: { label: 'Subject ID', field: 'sseqid' },
-          na_length: { label: 'Length (NT)', field: 'na_length' },
-          aa_length: { label: 'Length (AA)', field: 'aa_length' },
+          // na_length: { label: 'Length (NT)', field: 'na_length' },
+          // aa_length: { label: 'Length (AA)', field: 'aa_length' },
           length: { label: 'ALN Length', field: 'length' },
           identity: { label: 'Identity (%)', field: 'pident' },
           q_coverage: { label: 'Query cover (%)', field: 'query_coverage' },

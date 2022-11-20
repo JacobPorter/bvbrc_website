@@ -211,7 +211,7 @@ define([
               console.log('Unrecognized type.');
               this.defaultLoadData(res);
             }
-            if (!this.type === 'no_ids') {
+            if (this.type != 'no_ids') {
               return request.post(window.App.dataAPI + this.type + '/', {
                 handleAs: 'json',
                 headers: {
