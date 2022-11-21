@@ -90,6 +90,12 @@ define([
     applicationHelp: 'quick_references/services/blast.html',
     applicationName: 'Homology',
     tutorialLink: 'tutorial/blast/blast.html',
+    requireAuth: true,
+    applicationLabel: 'BLAST',
+    applicationDescription: 'The BLAST service uses BLAST (Basic Local Aligment Search Tool) to search against public or private genomes or other databases using DNA or protein sequence(s).',
+    videoLink: '',
+    pageTitle: 'BLAST',
+    appBaseURL: 'Homology',
     addedGenomes: 0,
     maxGenomes: 20,
     genome_id_error: 'No genome was selected. Please use the arrow button to select genomes to search.',
@@ -131,7 +137,9 @@ define([
         // this.genome_group.set('type', ['genome_group']);
         // this.genome_group.placeAt(ggDom, 'only');
       }
-
+      if (!this.genomeTable || !this.startingRows) {
+        return;
+      }
       this.emptyTable(this.genomeTable, this.startingRows);
       // this.emptyTable(this.patternFileTable, this.patternRows);
       this.onInputChange(true);
@@ -589,10 +597,6 @@ define([
 
 
     onChangeProgram: function (val, start = false) {
-      // console.log(val);
-      if (!val) {
-        return;
-      }
       this.program = '';
       this.sequence_type = NO;
       var old_type = this.input_type;
